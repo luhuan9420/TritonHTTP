@@ -92,6 +92,11 @@ func (res *Response) WriteSortedHeaders(w io.Writer) error {
 // WriteBody writes res' file content as them  response body to w.
 // It doesn't write anything if there is no file to serve.
 func (res *Response) WriteBody(w io.Writer) error {
+
+	if res.FilePath == "" {
+		return nil
+	}
+
 	bw := bufio.NewWriter(w)
 
 	data, err := os.ReadFile(res.FilePath)
