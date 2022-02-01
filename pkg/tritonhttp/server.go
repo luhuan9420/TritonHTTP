@@ -225,7 +225,9 @@ func (res *Response) HandleNotFound(req *Request) {
 
 	res.Header = req.Header
 	res.Header["Date"] = FormatTime(time.Now())
-	//res.Header["Connection"] = "close"
+	if req.Close {
+		res.Header["Connection"] = "close"
+	}
 }
 
 func (s *Server) ValidateServerSetup() error {
