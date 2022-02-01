@@ -1,7 +1,10 @@
 package tritonhttp
 
 import (
+	"fmt"
 	"io"
+	"os"
+	"sort"
 )
 
 type Response struct {
@@ -39,7 +42,18 @@ func (res *Response) Write(w io.Writer) error {
 // WriteStatusLine writes the status line of res to w, including the ending "\r\n".
 // For example, it could write "HTTP/1.1 200 OK\r\n".
 func (res *Response) WriteStatusLine(w io.Writer) error {
-	panic("todo")
+	// s := &Server{}
+	// desc := s.statusText[res.StatusCode]
+	str := fmt.Sprintf("%v %v %v\r\n", res.Proto, res.StatusCode, statusText[res.StatusCode])
+	_, err := w.Write([]byte(str))
+	if err != nil {
+		return err
+	}
+
+	// if err := w.Flush(); err != nil {
+	// 	return err
+	// }
+	return err
 }
 
 // WriteSortedHeaders writes the headers of res to w, including the ending "\r\n".
@@ -47,11 +61,39 @@ func (res *Response) WriteStatusLine(w io.Writer) error {
 // For HTTP, there is no need to write headers in any particular order.
 // TritonHTTP requires to write in sorted order for the ease of testing.
 func (res *Response) WriteSortedHeaders(w io.Writer) error {
-	panic("todo")
+	// sort headers
+	header_keys := make([]string, 0, len(res.Header))
+	for k := range res.Header {
+		header_keys = append(header_keys, k)
+	}
+	sort.Strings(header_keys)
+
+	for _, key := range header_keys {
+		value := res.Header[key]
+		str := fmt.Sprintf("%v: %v\r\n", key, value)
+		_, err := w.Write([]byte(str))
+		if err != nil {
+			return err
+		}
+	}
+	_, err := w.Write([]byte("\r\n"))
+	if err != nil {
+		return err
+	}
+	return nil
 }
 
-// WriteBody writes res' file content as the response body to w.
+// WriteBody writes res' file content as them  response body to w.
 // It doesn't write anything if there is no file to serve.
 func (res *Response) WriteBody(w io.Writer) error {
-	panic("todo")
+	data, err := os.ReadFile(res.FilePath)
+	if err != nil {
+		return err
+	}
+
+	_, err = w.Write(data)
+	if err != nil {
+		return err
+	}
+	return nil
 }
