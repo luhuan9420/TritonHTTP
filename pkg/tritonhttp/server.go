@@ -95,17 +95,20 @@ func (s *Server) HandleConnection(conn net.Conn) {
 			return
 		}
 
+		fmt.Printf("%v\n", bytesReceived)
 		// Handle timeout
 		// just close the connection (need more)
-		if err, ok := err.(net.Error); err != nil {
-			if ok && err.Timeout() && !bytesReceived {
+		if err, ok := err.(net.Error); ok && err.Timeout() {
+			if !bytesReceived {
 				log.Printf("Connection to %v timed out", conn.RemoteAddr())
 				_ = conn.Close()
 				return
-			} else if ok && err.Timeout() && bytesReceived {
+			}
+			if bytesReceived {
 				res := &Response{}
 				log.Printf("Connection to %v timed out with part of a request sent", conn.RemoteAddr())
 				res.HandleBadRequest()
+				_ = res.Write(conn)
 				_ = conn.Close()
 				return
 			}
