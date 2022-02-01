@@ -77,6 +77,125 @@ func TestReadGoodRequest(t *testing.T) {
 				Close: true,
 			},
 		},
+		{
+			"DontExpandSlashHere",
+			"GET / HTTP/1.1\r\n" +
+				"Host: test\r\n" +
+				"\r\n",
+			&Request{
+				Method: "GET",
+				URL:    "/",
+				Proto:  "HTTP/1.1",
+				Header: map[string]string{},
+				Host:   "test",
+				Close:  false,
+			},
+		},
+		{
+			"EmptyValueInConnection",
+			"GET /index.html HTTP/1.1\r\n" +
+				"Host: test\r\n" +
+				"Connection: \r\n" +
+				"\r\n",
+			&Request{
+				Method: "GET",
+				URL:    "/index.html",
+				Proto:  "HTTP/1.1",
+				Header: map[string]string{},
+				Host:   "test",
+				Close:  false,
+			},
+		},
+		{
+			"MiscHeaders2",
+			"GET /index.html HTTP/1.1\r\n" +
+				"Host: test\r\n" +
+				"Connection: close\r\n" +
+				"key1: val1\r\n" +
+				"key2: val2\r\n" +
+				"\r\n",
+			&Request{
+				Method: "GET",
+				URL:    "/index.html",
+				Proto:  "HTTP/1.1",
+				Header: map[string]string{
+					"Key1": "val1",
+					"Key2": "val2",
+				},
+				Host:  "test",
+				Close: true,
+			},
+		},
+		{
+			"EmptyValueHeader",
+			"GET /index.html HTTP/1.1\r\n" +
+				"Host: test\r\n" +
+				"Connection: close\r\n" +
+				"key1:\r\n" +
+				"key2:    \r\n" +
+				"\r\n",
+			&Request{
+				Method: "GET",
+				URL:    "/index.html",
+				Proto:  "HTTP/1.1",
+				Header: map[string]string{
+					"Key1": "",
+					"Key2": "",
+				},
+				Host:  "test",
+				Close: true,
+			},
+		},
+		{
+			"AlternativeFormOfConnection",
+			"GET /index.html HTTP/1.1\r\n" +
+				"Host: test\r\n" +
+				"connection: close\r\n" +
+				"\r\n",
+			&Request{
+				Method: "GET",
+				URL:    "/index.html",
+				Proto:  "HTTP/1.1",
+				Header: map[string]string{},
+				Host:   "test",
+				Close:  true,
+			},
+		},
+		{
+			"OtherValuesInConnection",
+			"GET /index.html HTTP/1.1\r\n" +
+				"Host: test\r\n" +
+				"Connection: something-else\r\n" +
+				"\r\n",
+			&Request{
+				Method: "GET",
+				URL:    "/index.html",
+				Proto:  "HTTP/1.1",
+				Header: map[string]string{},
+				Host:   "test",
+				Close:  false,
+			},
+		},
+		{
+			"MultipleColons",
+			"GET /index.html HTTP/1.1\r\n" +
+				"Host: test\r\n" +
+				"Connection: close\r\n" +
+				"key1:123:\r\n" +
+				"key2:456::ab:hello?:@\r\n" +
+				"\r\n",
+			&Request{
+				Method: "GET",
+				URL:    "/index.html",
+				Proto:  "HTTP/1.1",
+				Header: map[string]string{
+					"Key1": "123:",
+					"Key2": "456::ab:hello?:@",
+				},
+				Host:  "test",
+				Close: true,
+			},
+		},
 	}
 
 	for _, tt := range tests {
@@ -99,6 +218,28 @@ func TestReadBadRequest(t *testing.T) {
 		{
 			"Empty",
 			"\r\n",
+		},
+		{
+			"LeadingAndTrailingWhiteSpace",
+			"  GET /index.html HTTP/1.1  \r\n" +
+				"Host: test\r\n" +
+				"\r\n",
+		},
+		{
+			"WrongHeaders",
+			"GET /index.html HTTP/1.1\r\n" +
+				"Host: test\r\n" +
+				"Connection: close\r\n" +
+				"key1 val1\r\n" +
+				"\r\n",
+		},
+		{
+			"WrongHeadersKey",
+			"GET /index.html HTTP/1.1\r\n" +
+				"Host: test\r\n" +
+				"Connection: close\r\n" +
+				"key?1: val1\r\n" +
+				"\r\n",
 		},
 	}
 

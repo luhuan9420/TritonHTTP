@@ -117,6 +117,87 @@ func TestHandleGoodRequest(t *testing.T) {
 			map[string]string{},
 			"",
 		},
+		{
+			"404TryToReadADirectory",
+			&Request{
+				Method: "GET",
+				URL:    "/subdir",
+				Proto:  "HTTP/1.1",
+				Header: map[string]string{},
+				Host:   "test",
+				Close:  true,
+			},
+			404,
+			[]string{
+				"Date",
+			},
+			map[string]string{
+				"Connection": "close",
+			},
+			"",
+		},
+		{
+			"New",
+			&Request{
+				Method: "GET",
+				URL:    "/subdir/index.html/../index.html",
+				Proto:  "HTTP/1.1",
+				Header: map[string]string{},
+				Host:   "test",
+				Close:  false,
+			},
+			200,
+			[]string{
+				"Date",
+				"Last-Modified",
+			},
+			map[string]string{
+				"Content-Type":   "text/html; charset=utf-8",
+				"Content-Length": "8",
+			},
+			"subdir/index.html",
+		},
+		{
+			"OKFilePathCheck2",
+			&Request{
+				Method: "GET",
+				URL:    "../testdata/subdir/../",
+				Proto:  "HTTP/1.1",
+				Header: map[string]string{},
+				Host:   "test",
+				Close:  false,
+			},
+			200,
+			[]string{
+				"Date",
+				"Last-Modified",
+			},
+			map[string]string{
+				"Content-Type":   contentTypeHTML,
+				"Content-Length": "12",
+			},
+			"index.html",
+		},
+		// {"OKFilePathCheck",
+		// 	&Request{
+		// 		Method: "GET",
+		// 		URL:    "subdir/",
+		// 		Proto:  "HTTP/1.1",
+		// 		Header: map[string]string{},
+		// 		Host:   "test",
+		// 		Close:  false,
+		// 	},
+		// 	200,
+		// 	[]string{
+		// 		"Date",
+		// 		"Last-Modified",
+		// 	},
+		// 	map[string]string{
+		// 		"Content-Type":   contentTypeHTML,
+		// 		"Content-Length": "12",
+		// 	},
+		// 	"subdir/index.html",
+		// },
 	}
 
 	for _, tt := range tests {
