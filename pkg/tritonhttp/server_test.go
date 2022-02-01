@@ -161,7 +161,7 @@ func TestHandleGoodRequest(t *testing.T) {
 			"OKFilePathCheck2",
 			&Request{
 				Method: "GET",
-				URL:    "../testdata/subdir/../",
+				URL:    "/../testdata/subdir/../",
 				Proto:  "HTTP/1.1",
 				Header: map[string]string{},
 				Host:   "test",
@@ -178,26 +178,27 @@ func TestHandleGoodRequest(t *testing.T) {
 			},
 			"index.html",
 		},
-		// {"OKFilePathCheck",
-		// 	&Request{
-		// 		Method: "GET",
-		// 		URL:    "subdir/",
-		// 		Proto:  "HTTP/1.1",
-		// 		Header: map[string]string{},
-		// 		Host:   "test",
-		// 		Close:  false,
-		// 	},
-		// 	200,
-		// 	[]string{
-		// 		"Date",
-		// 		"Last-Modified",
-		// 	},
-		// 	map[string]string{
-		// 		"Content-Type":   contentTypeHTML,
-		// 		"Content-Length": "12",
-		// 	},
-		// 	"subdir/index.html",
-		// },
+		{
+			"OKFilePathCheck",
+			&Request{
+				Method: "GET",
+				URL:    "/subdir/",
+				Proto:  "HTTP/1.1",
+				Header: map[string]string{},
+				Host:   "test",
+				Close:  false,
+			},
+			200,
+			[]string{
+				"Date",
+				"Last-Modified",
+			},
+			map[string]string{
+				"Content-Type":   contentTypeHTML,
+				"Content-Length": "8",
+			},
+			"subdir/index.html",
+		},
 	}
 
 	for _, tt := range tests {

@@ -241,6 +241,10 @@ func TestReadBadRequest(t *testing.T) {
 				"key?1: val1\r\n" +
 				"\r\n",
 		},
+		{
+			"MalformedURL",
+			"GET subdir/ HTTP/1.1\r\nHost: test\r\n\r\n",
+		},
 	}
 
 	for _, tt := range tests {
