@@ -105,7 +105,13 @@ func ReadRequest(br *bufio.Reader) (req *Request, bytesReceived bool, err error)
 			return nil, bytesRec, fmt.Errorf("Bad Request, host is empty")
 		}
 
-		key := h[0]
+		for _, c := range h[0] {
+			if (c < '0' || c > '9') && (c < 'a' || c > 'z') && (c < 'A' || c > 'Z') && c != '-' {
+				return nil, bytesRec, fmt.Errorf("Bad Request, host contains not accepted char: %v\n", h[0])
+			}
+		}
+
+		key := CanonicalHeaderKey(h[0])
 		value := strings.TrimSpace(h[1])
 		// check if it is host
 		if key == "Host" {
