@@ -1,6 +1,7 @@
 package tritonhttp
 
 import (
+	"bufio"
 	"fmt"
 	"io"
 	"os"
@@ -42,6 +43,7 @@ func (res *Response) Write(w io.Writer) error {
 // WriteStatusLine writes the status line of res to w, including the ending "\r\n".
 // For example, it could write "HTTP/1.1 200 OK\r\n".
 func (res *Response) WriteStatusLine(w io.Writer) error {
+	bw := bufio.NewWriter(w)
 	// s := &Server{}
 	// desc := s.statusText[res.StatusCode]
 	str := fmt.Sprintf("%v %v %v\r\n", res.Proto, res.StatusCode, statusText[res.StatusCode])
@@ -50,9 +52,9 @@ func (res *Response) WriteStatusLine(w io.Writer) error {
 		return err
 	}
 
-	// if err := w.Flush(); err != nil {
-	// 	return err
-	// }
+	if err := bw.Flush(); err != nil {
+		return err
+	}
 	return err
 }
 
@@ -68,16 +70,20 @@ func (res *Response) WriteSortedHeaders(w io.Writer) error {
 	}
 	sort.Strings(header_keys)
 
+	bw := bufio.NewWriter(w)
 	for _, key := range header_keys {
 		value := res.Header[key]
 		str := fmt.Sprintf("%v: %v\r\n", key, value)
-		_, err := w.Write([]byte(str))
+		_, err := bw.Write([]byte(str))
 		if err != nil {
 			return err
 		}
 	}
-	_, err := w.Write([]byte("\r\n"))
+	_, err := bw.Write([]byte("\r\n"))
 	if err != nil {
+		return err
+	}
+	if err := bw.Flush(); err != nil {
 		return err
 	}
 	return nil
@@ -86,13 +92,19 @@ func (res *Response) WriteSortedHeaders(w io.Writer) error {
 // WriteBody writes res' file content as them  response body to w.
 // It doesn't write anything if there is no file to serve.
 func (res *Response) WriteBody(w io.Writer) error {
+	bw := bufio.NewWriter(w)
+
 	data, err := os.ReadFile(res.FilePath)
 	if err != nil {
 		return err
 	}
 
-	_, err = w.Write(data)
+	_, err = bw.Write(data)
 	if err != nil {
+		return err
+	}
+
+	if err := bw.Flush(); err != nil {
 		return err
 	}
 	return nil

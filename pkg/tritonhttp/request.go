@@ -68,16 +68,18 @@ func ReadRequest(br *bufio.Reader) (req *Request, bytesReceived bool, err error)
 	req = &Request{}
 	req.Method = fields[0]
 	req.Proto = fields[2]
-	req.Close = false
+	//req.Close = false
 
-	url := fields[1]
-	if strings.HasSuffix(url, "/") {
-		url = url + "index.html"
-	}
-	req.URL = url
+	req.URL = fields[1]
+	// if strings.HasSuffix(req.URL, "/") {
+	// 	req.URL = req.URL + "index.html"
+	// }
+	// fmt.Printf("url: %v\n", req.URL)
 
 	// Read headers
-	var header = make(map[string]string)
+	req.Header = make(map[string]string)
+	checkConn := false
+	checkHost := false
 	// bytesRec = false
 	for {
 		line, err := ReadLine(br)
@@ -102,22 +104,39 @@ func ReadRequest(br *bufio.Reader) (req *Request, bytesReceived bool, err error)
 		if len(strings.TrimSpace(h[0])) == 0 {
 			return nil, bytesRec, fmt.Errorf("Bad Request, host is empty")
 		}
+
+		key := h[0]
+		value := strings.TrimSpace(h[1])
 		// check if it is host
-		if h[0] == "Host" {
-			req.Host = h[1]
+		if key == "Host" {
+			req.Host = value
+			checkHost = true
 		}
-		if h[0] == "Connection" && h[1] == "close" {
-			req.Close = true
+		// if key == "Connection" && value == "close" {
+		// 	req.Close = true
+		// 	checkConn = true
+		// } else
+		if key == "Connection" {
+			checkConn = true
 		}
 
-		header[h[0]] = h[1]
+		req.Header[key] = value
 	}
 
 	// Check required headers
-
+	fmt.Printf("Header: %v\n", req.Header)
 	// Handle special headers
-	delete(header, "Connection")
-	req.Header = header
+	if checkConn {
+		if req.Header["Connection"] == "close" {
+			req.Close = true
+		} else {
+			req.Close = false
+		}
+		delete(req.Header, "Connection")
+	}
+	if checkHost {
+		delete(req.Header, "Host")
+	}
 
-	return req, bytesReceived, nil
+	return req, bytesRec, nil
 }

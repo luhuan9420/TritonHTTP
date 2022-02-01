@@ -145,11 +145,20 @@ func (s *Server) HandleConnection(conn net.Conn) {
 func (s *Server) HandleGoodRequest(req *Request) (res *Response) {
 	// validate url: error 404
 	res = &Response{}
+
+	if strings.HasSuffix(req.URL, "/") {
+		req.URL = req.URL + "index.html"
+	}
+	fmt.Printf("url: %v\n", req.URL)
+
+	if req.URL == "" {
+		res.HandleNotFound(req)
+	}
 	path := filepath.Clean(filepath.Join(s.DocRoot, req.URL))
 	if !strings.HasPrefix(path, s.DocRoot) {
 		res.HandleNotFound(req)
 	}
-	fmt.Printf("File path: %v", path)
+	fmt.Printf("File path: %v\n", path)
 
 	fi, err := os.Stat(path)
 	if os.IsNotExist(err) {
@@ -174,17 +183,15 @@ func (res *Response) HandleOK(req *Request, path string) {
 		fmt.Println(err)
 	}
 
-	response_header := make(map[string]string)
-	response_header["Date"] = FormatTime(time.Now())
-	response_header["Last-Modified"] = FormatTime(file.ModTime())
+	res.Header = req.Header
+	res.Header["Date"] = FormatTime(time.Now())
+	res.Header["Last-Modified"] = FormatTime(file.ModTime())
 	ext := "." + strings.SplitN(path, ".", 2)[1]
-	response_header["Content-Type"] = MIMETypeByExtension(ext)
-	response_header["Content-Length"] = strconv.Itoa(int(file.Size()))
+	res.Header["Content-Type"] = MIMETypeByExtension(ext)
+	res.Header["Content-Length"] = strconv.Itoa(int(file.Size()))
 	if req.Close {
-		response_header["Connection"] = "close"
+		res.Header["Connection"] = "close"
 	}
-
-	res.Header = response_header
 
 	res.FilePath = path
 	res.Request = req
@@ -213,10 +220,9 @@ func (res *Response) HandleNotFound(req *Request) {
 	res.Proto = "HTTP/1.1"
 	res.Request = nil
 
-	response_header := make(map[string]string)
-	response_header["Date"] = FormatTime(time.Now())
-	response_header["Connection"] = "close"
-	res.Header = response_header
+	res.Header = req.Header
+	res.Header["Date"] = FormatTime(time.Now())
+	res.Header["Connection"] = "close"
 }
 
 func (s *Server) ValidateServerSetup() error {
