@@ -112,18 +112,16 @@ func ReadRequest(br *bufio.Reader) (req *Request, bytesReceived bool, err error)
 		}
 
 		key := CanonicalHeaderKey(h[0])
-		value := strings.TrimSpace(h[1])
+		value := strings.TrimLeft(h[1], " ")
+
+		if key == "Connection" {
+			checkConn = true
+		}
+
 		// check if it is host
 		if key == "Host" {
 			req.Host = value
 			checkHost = true
-		}
-		// if key == "Connection" && value == "close" {
-		// 	req.Close = true
-		// 	checkConn = true
-		// } else
-		if key == "Connection" {
-			checkConn = true
 		}
 
 		req.Header[key] = value

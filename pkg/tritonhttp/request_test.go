@@ -112,7 +112,7 @@ func TestReadGoodRequest(t *testing.T) {
 				"Host: test\r\n" +
 				"Connection: close\r\n" +
 				"key1: val1\r\n" +
-				"key2: val2\r\n" +
+				"key2: val2  \r\n" +
 				"\r\n",
 			&Request{
 				Method: "GET",
@@ -120,7 +120,7 @@ func TestReadGoodRequest(t *testing.T) {
 				Proto:  "HTTP/1.1",
 				Header: map[string]string{
 					"Key1": "val1",
-					"Key2": "val2",
+					"Key2": "val2  ",
 				},
 				Host:  "test",
 				Close: true,
@@ -194,6 +194,36 @@ func TestReadGoodRequest(t *testing.T) {
 				},
 				Host:  "test",
 				Close: true,
+			},
+		},
+		{
+			"SpaceAfterClose",
+			"GET /index.html HTTP/1.1\r\n" +
+				"Host: test\r\n" +
+				"connection:close  \r\n" +
+				"\r\n",
+			&Request{
+				Method: "GET",
+				URL:    "/index.html",
+				Proto:  "HTTP/1.1",
+				Header: map[string]string{},
+				Host:   "test",
+				Close:  false,
+			},
+		},
+		{
+			"SpaceBeforeClose",
+			"GET /index.html HTTP/1.1\r\n" +
+				"Host: test\r\n" +
+				"connection:   close\r\n" +
+				"\r\n",
+			&Request{
+				Method: "GET",
+				URL:    "/index.html",
+				Proto:  "HTTP/1.1",
+				Header: map[string]string{},
+				Host:   "test",
+				Close:  true,
 			},
 		},
 	}
