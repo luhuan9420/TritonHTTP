@@ -84,6 +84,7 @@ func ReadRequest(br *bufio.Reader) (req *Request, bytesReceived bool, err error)
 	for {
 		line, err := ReadLine(br)
 		if err != nil {
+			fmt.Printf("Error while read line: %v\n", err)
 			return nil, bytesRec, err
 		}
 		if line == "" {
@@ -140,6 +141,8 @@ func ReadRequest(br *bufio.Reader) (req *Request, bytesReceived bool, err error)
 	}
 	if checkHost {
 		delete(req.Header, "Host")
+	} else {
+		return nil, bytesRec, fmt.Errorf("Bad Request: missing host")
 	}
 
 	return req, bytesRec, nil

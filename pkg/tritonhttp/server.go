@@ -128,6 +128,7 @@ func (s *Server) HandleConnection(conn net.Conn) {
 		// Handle good request
 		log.Printf("Handle good request: %v", req)
 		res := s.HandleGoodRequest(req)
+		fmt.Printf("Good request response: %v\n", res)
 		// call response write function
 		err = res.Write(conn)
 		if err != nil {
@@ -156,12 +157,19 @@ func (s *Server) HandleGoodRequest(req *Request) (res *Response) {
 
 	if req.URL == "" {
 		res.HandleNotFound(req)
+		return res
 	}
-	path := filepath.Clean(filepath.Join(s.DocRoot, req.URL))
-	if !strings.HasPrefix(path, s.DocRoot) {
-		res.HandleNotFound(req)
-	}
+	// path := filepath.Clean(filepath.Join(s.DocRoot, req.URL))
+	// fmt.Printf("Full path: %v\n", s.DocRoot+req.URL)
+	path := filepath.Clean(s.DocRoot + req.URL)
+	// fmt.Printf("Doc root: %v\n", s.DocRoot)
 	fmt.Printf("File path: %v\n", path)
+
+	// fmt.Printf("Has Doc Root prefix? %v\n", strings.HasPrefix(path, s.DocRoot))
+	if strings.HasPrefix(path, s.DocRoot) == false {
+		res.HandleNotFound(req)
+		return res
+	}
 
 	fi, err := os.Stat(path)
 	if os.IsNotExist(err) {
@@ -169,14 +177,17 @@ func (s *Server) HandleGoodRequest(req *Request) (res *Response) {
 	} else if fi.IsDir() {
 		res.HandleNotFound(req)
 	} else {
+		// fmt.Println("Handle OK")
 		res.HandleOK(req, path)
 	}
+	// fmt.Printf("Response: %v\n", res)
 	return res
 }
 
 // HandleOK prepares res to be a 200 OK response
 // ready to be written back to client.
 func (res *Response) HandleOK(req *Request, path string) {
+	// fmt.Printf("Handle OK")
 	// edit response object value
 	res.Proto = req.Proto
 	res.StatusCode = statusOK
@@ -186,7 +197,8 @@ func (res *Response) HandleOK(req *Request, path string) {
 		fmt.Println(err)
 	}
 
-	res.Header = req.Header
+	// res.Header = req.Header
+	res.Header = make(map[string]string)
 	res.Header["Date"] = FormatTime(time.Now())
 	res.Header["Last-Modified"] = FormatTime(file.ModTime())
 	ext := "." + strings.SplitN(path, ".", 2)[1]
@@ -218,6 +230,8 @@ func (res *Response) HandleBadRequest() {
 // HandleNotFound prepares res to be a 404 Not Found response
 // ready to be written back to client.
 func (res *Response) HandleNotFound(req *Request) {
+	// fmt.Println("Handle Not Found Error")
+	// fmt.Printf("status code got: %v\n", statusNotFound)
 	res.StatusCode = statusNotFound
 	res.FilePath = ""
 	res.Proto = "HTTP/1.1"
