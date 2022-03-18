@@ -92,7 +92,7 @@ func ReadRequest(br *bufio.Reader) (req *Request, bytesReceived bool, err error)
 			break
 		}
 		// bytesRec = true
-		fmt.Println("Read line from request", line)
+		// fmt.Println("Read line from request", line)
 		h := strings.SplitN(line, ":", 2)
 		// check h valid
 		if len(h) != 2 {
@@ -129,7 +129,7 @@ func ReadRequest(br *bufio.Reader) (req *Request, bytesReceived bool, err error)
 	}
 
 	// Check required headers
-	fmt.Printf("Header: %v\n", req.Header)
+	// fmt.Printf("Header: %v\n", req.Header)
 	// Handle special headers
 	if checkConn {
 		if req.Header["Connection"] == "close" {

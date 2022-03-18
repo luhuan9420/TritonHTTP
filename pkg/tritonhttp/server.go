@@ -44,14 +44,14 @@ func (s *Server) ListenAndServe() error {
 	if err := s.ValidateServerSetup(); err != nil {
 		return fmt.Errorf("server is not up correctly %v", err)
 	}
-	fmt.Println("Server setup valid!")
+	// fmt.Println("Server setup valid!")
 
 	// Server should now start to listen on the configured address
 	ln, err := net.Listen("tcp", s.Addr)
 	if err != nil {
 		return fmt.Errorf("%v", err)
 	}
-	fmt.Println("Listening on", ln.Addr())
+	// fmt.Println("Listening on", ln.Addr())
 
 	// Making sure the listener is closed when exit
 	defer func() {
@@ -90,23 +90,23 @@ func (s *Server) HandleConnection(conn net.Conn) {
 
 		// Handle EOF
 		if errors.Is(err, io.EOF) {
-			log.Printf("Connection closed by %v", conn.RemoteAddr())
+			fmt.Printf("Connection closed by %v", conn.RemoteAddr())
 			_ = conn.Close()
 			return
 		}
 
-		fmt.Printf("%v\n", bytesReceived)
+		// fmt.Printf("%v\n", bytesReceived)
 		// Handle timeout
 		// just close the connection (need more)
 		if err, ok := err.(net.Error); ok && err.Timeout() {
 			if !bytesReceived {
-				log.Printf("Connection to %v timed out", conn.RemoteAddr())
+				fmt.Printf("Connection to %v timed out", conn.RemoteAddr())
 				_ = conn.Close()
 				return
 			}
 			if bytesReceived {
 				res := &Response{}
-				log.Printf("Connection to %v timed out with part of a request sent", conn.RemoteAddr())
+				fmt.Printf("Connection to %v timed out with part of a request sent", conn.RemoteAddr())
 				res.HandleBadRequest()
 				_ = res.Write(conn)
 				_ = conn.Close()
@@ -118,7 +118,7 @@ func (s *Server) HandleConnection(conn net.Conn) {
 		// request is not a GET
 		if err != nil {
 			res := &Response{}
-			log.Printf("Handle bad request for error %v", err)
+			fmt.Printf("Handle bad request for error %v", err)
 			res.HandleBadRequest()
 			_ = res.Write(conn)
 			_ = conn.Close()
@@ -128,15 +128,15 @@ func (s *Server) HandleConnection(conn net.Conn) {
 		// Handle good request
 		log.Printf("Handle good request: %v", req)
 		res := s.HandleGoodRequest(req)
-		fmt.Printf("Good request response: %v\n", res)
+		// fmt.Printf("Good request response: %v\n", res)
 		// call response write function
 		err = res.Write(conn)
 		if err != nil {
-			fmt.Println(err)
+			fmt.Printf("Write error: %v\n", err)
 		}
 
 		if req.Close || res.StatusCode != 200 {
-			log.Printf("Request close connection")
+			fmt.Printf("Request close connection")
 			_ = conn.Close()
 			return
 		}
@@ -157,6 +157,7 @@ func (s *Server) HandleGoodRequest(req *Request) (res *Response) {
 
 	if req.URL == "" {
 		res.HandleNotFound(req)
+		fmt.Printf("Empty request url: Status: %v, Connection close: %v\n", res.StatusCode, req.Close)
 		return res
 	}
 	// path := filepath.Clean(filepath.Join(s.DocRoot, req.URL))
@@ -168,17 +169,21 @@ func (s *Server) HandleGoodRequest(req *Request) (res *Response) {
 	// fmt.Printf("Has Doc Root prefix? %v\n", strings.HasPrefix(path, s.DocRoot))
 	if strings.HasPrefix(path, s.DocRoot) == false {
 		res.HandleNotFound(req)
+		fmt.Printf("Path not doc root: Status: %v, Connection close: %v\n", res.StatusCode, req.Close)
 		return res
 	}
 
 	fi, err := os.Stat(path)
 	if os.IsNotExist(err) {
 		res.HandleNotFound(req)
+		fmt.Printf("Path not exist: Status: %v, Connection close: %v\n", res.StatusCode, req.Close)
 	} else if fi.IsDir() {
 		res.HandleNotFound(req)
+		fmt.Printf("Path is dir: Status: %v, Connection close: %v\n", res.StatusCode, req.Close)
 	} else {
 		// fmt.Println("Handle OK")
 		res.HandleOK(req, path)
+		fmt.Printf("Status: %v, Connection close: %v\n", res.StatusCode, req.Close)
 	}
 	// fmt.Printf("Response: %v\n", res)
 	return res
@@ -194,7 +199,7 @@ func (res *Response) HandleOK(req *Request, path string) {
 
 	file, err := os.Stat(path)
 	if err != nil {
-		fmt.Println(err)
+		// fmt.Println(err)
 	}
 
 	// res.Header = req.Header
@@ -237,7 +242,8 @@ func (res *Response) HandleNotFound(req *Request) {
 	res.Proto = "HTTP/1.1"
 	res.Request = nil
 
-	res.Header = req.Header
+	// res.Header = req.Header
+	res.Header = make(map[string]string)
 	res.Header["Date"] = FormatTime(time.Now())
 	if req.Close {
 		res.Header["Connection"] = "close"
