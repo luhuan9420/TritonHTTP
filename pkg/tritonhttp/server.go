@@ -80,7 +80,7 @@ func (s *Server) HandleConnection(conn net.Conn) {
 	for {
 		// Set timeout
 		if err := conn.SetReadDeadline(time.Now().Add(5 * time.Second)); err != nil {
-			log.Printf("Failed to set timeout for connection %v", conn)
+			fmt.Printf("Failed to set timeout for connection %v", conn)
 			_ = conn.Close()
 			return
 		}
@@ -135,7 +135,7 @@ func (s *Server) HandleConnection(conn net.Conn) {
 			fmt.Printf("Write error: %v\n", err)
 		}
 
-		if req.Close || res.StatusCode != 200 {
+		if req.Close || res.StatusCode == 400 {
 			fmt.Printf("Request close connection")
 			_ = conn.Close()
 			return
